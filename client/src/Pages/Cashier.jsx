@@ -4,7 +4,8 @@ import useSound from "use-sound";
 import CashSound from "/assets/sounds/cash.mp3";
 
 // Connect to the backend server
-const socket = io("http://localhost:3001");
+const socket = io("https://monopolybank-av36.onrender.com");
+
 
 const Cashier = () => {
   const [players, setPlayers] = useState([]);
