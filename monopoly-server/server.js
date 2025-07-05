@@ -6,7 +6,14 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, { 
+  cors: { 
+    origin: process.env.NODE_ENV === 'production' 
+      ? ['https://monopoly-bank-five.vercel.app', 'https://monopolybank-av36.onrender.com']
+      : ['http://localhost:5173', 'http://localhost:3000'],
+    methods: ['GET', 'POST']
+  } 
+});
 
 const DATA_FILE = path.join(__dirname, 'savedData.json');
 
