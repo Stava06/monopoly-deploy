@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_SERVER_URL);
-
+const socket = io(import.meta.env.VITE_SERVER_URL, {
+  transports: ['websocket'], 
+});
 const Player = () => {
   const [nickname, setNickname] = useState("");
   const [hasJoined, setHasJoined] = useState(false);
