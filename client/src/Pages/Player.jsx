@@ -14,7 +14,7 @@ const Player = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [transferMsg, setTransferMsg] = useState("");
   const [payBankAmount, setPayBankAmount] = useState("");
-
+//
   useEffect(() => {
     // Receive this player's data
     socket.on("playerData", (data) => {
