@@ -28,7 +28,7 @@ function savePlayers() {
 
 // Serve frontend if built
 app.use(express.static(path.join(__dirname, '../client/dist')));
-app.get('*/', (req, res) => {
+app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
@@ -99,5 +99,5 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
