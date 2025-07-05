@@ -28,10 +28,9 @@ function savePlayers() {
 
 // Serve frontend if built
 app.use(express.static(path.join(__dirname, '../client/dist')));
-app.get('/*', (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
-
 io.on("connection", (socket) => {
   console.log(`🟢 ${socket.id} connected`);
 
