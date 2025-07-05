@@ -6,7 +6,7 @@ import CashSound from "../assets/sounds/cash.mp3";
 // Connect to the backend server
 const socket = io(import.meta.env.VITE_SERVER_URL);
 
-
+//function
 const Cashier = () => {
   const [players, setPlayers] = useState([]);
   const [transferMsg, setTransferMsg] = useState(null);
