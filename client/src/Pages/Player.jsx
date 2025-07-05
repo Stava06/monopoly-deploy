@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3001");
+const socket = io("https://monopolybank-av36.onrender.com");
 
 const Player = () => {
   const [nickname, setNickname] = useState("");

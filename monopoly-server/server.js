@@ -1,98 +1,102 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
-let players = []; // Each player: { id, name, money }
+const DATA_FILE = path.join(__dirname, 'savedData.json');
+
+// Load saved players
+let players = [];
+try {
+  if (fs.existsSync(DATA_FILE)) {
+    players = JSON.parse(fs.readFileSync(DATA_FILE));
+    console.log("📁 Loaded saved players:", players.length);
+  }
+} catch (err) {
+  console.error("❌ Failed to load savedData.json:", err.message);
+}
+
+// Save function
+function savePlayers() {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(players, null, 2));
+}
+
+// Serve frontend if built
+app.use(express.static(path.join(__dirname, '../client/dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
 io.on("connection", (socket) => {
   console.log(`🟢 ${socket.id} connected`);
 
-  // Player joining the game
   socket.on("join", (nickname) => {
-    // Find player by name
     const existing = players.find(p => p.name === nickname);
 
     if (existing) {
-      // Check if the player is already connected
-      const isConnected = io.sockets.sockets.has(existing.id);
-      if (isConnected) {
-        socket.emit("joinError", "Name already taken and online!");
-        return;
-      } else {
-        // Reclaim the player slot: update id to new socket id
-        existing.id = socket.id;
-        socket.emit("playerData", existing);
-        io.emit("players", players);
-        return;
-      }
+      existing.id = socket.id; // Reconnect with updated socket ID
+      socket.emit("playerData", existing);
+    } else {
+      const newPlayer = { id: socket.id, name: nickname, money: 1500 };
+      players.push(newPlayer);
+      socket.emit("playerData", newPlayer);
     }
 
-    // If not found, create new player
-    const player = {
-      id: socket.id,
-      name: nickname,
-      money: 1500
-    };
-    players.push(player);
-    socket.emit("playerData", player);
     io.emit("players", players);
+    savePlayers();
   });
 
-  // Handle player disconnect (but keep their data)
-  socket.on("disconnect", () => {
-    console.log(`🔴 ${socket.id} disconnected`);
-    // Do NOT remove player; they may reconnect with same name
-    // Just keep their data as-is
-    players = players.filter(p => p.id !== socket.id);
-    io.emit("players", players);
-  });
-
-  // Handle money transfers
   socket.on("transferMoney", ({ fromId, toId, amount }) => {
     const sender = players.find(p => p.id === fromId);
+    const recipient = players.find(p => p.id === toId);
 
-    // Player pays bank
+    // Pay to bank
     if (toId === "bank") {
       if (!sender || sender.money < amount || amount <= 0) return;
       sender.money -= amount;
-      io.emit("players", players);
-      io.emit("transferMessage", {
-        from: sender.name,
-        to: "Bank",
-        amount
-      });
-      return;
     }
 
-    const recipient = players.find(p => p.id === toId);
-    if (!recipient || amount <= 0) return;
-
-    // Bank gives money
-    if (fromId === "bank") {
+    // Receive from bank
+    else if (fromId === "bank") {
+      if (!recipient || amount <= 0) return;
       recipient.money += amount;
-      io.emit("players", players);
-      return;
     }
 
-    // Player-to-player
-    if (!sender || sender.money < amount) return;
-
-    sender.money -= amount;
-    recipient.money += amount;
+    // Player to player
+    else {
+      if (!sender || !recipient || sender.money < amount || amount <= 0) return;
+      sender.money -= amount;
+      recipient.money += amount;
+    }
 
     io.emit("players", players);
     io.emit("transferMessage", {
-      from: sender.name,
-      to: recipient.name,
+      from: fromId === "bank" ? "Bank" : sender?.name,
+      to: toId === "bank" ? "Bank" : recipient?.name,
       amount
     });
+
+    savePlayers();
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`🔴 ${socket.id} disconnected`);
+
+    const disconnected = players.find(p => p.id === socket.id);
+    if (disconnected) {
+      disconnected.id = null; // Keep in list but mark as offline
+    }
+
+    io.emit("players", players);
+    savePlayers();
   });
 });
 
 server.listen(3001, () => {
-  console.log('🚀 Server running on http://localhost:3001');
+  console.log("Server running on http://localhost:3001");
 });
