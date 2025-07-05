@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import useSound from "use-sound";
-import CashSound from "/assets/sounds/cash.mp3";
+import CashSound from "../assets/sounds/cash.mp3";
 
 // Connect to the backend server
 const socket = io("https://monopolybank-av36.onrender.com");
