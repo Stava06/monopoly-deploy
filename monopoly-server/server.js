@@ -28,9 +28,7 @@ function savePlayers() {
 
 // Serve frontend if built
 app.use(express.static(path.join(__dirname, '../client/dist')));
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
+
 io.on("connection", (socket) => {
   console.log(`🟢 ${socket.id} connected`);
 
@@ -49,7 +47,9 @@ io.on("connection", (socket) => {
     io.emit("players", players);
     savePlayers();
   });
-
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
   socket.on("transferMoney", ({ fromId, toId, amount }) => {
     const sender = players.find(p => p.id === fromId);
     const recipient = players.find(p => p.id === toId);
