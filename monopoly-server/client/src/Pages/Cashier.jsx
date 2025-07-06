@@ -86,7 +86,7 @@ const Cashier = () => {
               />
             </div>
             <button
-              className="w-full sm:w-auto bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-lg mt-4 sm:mt-0"
+              className="w-full sm:w-auto bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-black font-bold py-3 px-8 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-lg mt-4 sm:mt-0"
               disabled={!selectedPlayerId || !cashierAmount || Number(cashierAmount) <= 0}
               onClick={handleTransfer}
             >
