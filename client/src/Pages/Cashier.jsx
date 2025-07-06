@@ -4,7 +4,7 @@ import useSound from "use-sound";
 import CashSound from "../assets/sounds/cash.mp3";
 
 // Connect to the backend server
-const socket = io();
+const socket = io(import.meta.env.VITE_SOCKET_URL);
 
 
 const Cashier = () => {
