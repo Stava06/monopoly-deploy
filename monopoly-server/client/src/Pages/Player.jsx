@@ -13,73 +13,38 @@ const Player = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [transferMsg, setTransferMsg] = useState("");
   const [payBankAmount, setPayBankAmount] = useState("");
-//
+
   useEffect(() => {
-    // Receive this player's data
     socket.on("playerData", (data) => {
       setPlayer(data);
       setHasJoined(true);
     });
 
-    // Update players list
-    socket.on("players", (players) => {
-      console.log("Received players list:", players);
-      setPlayers(players);
-    });
-    
     socket.on("players", (updatedPlayers) => {
-        setPlayers(updatedPlayers);
-      
-        // Also update this player's state from updated list
-        const updated = updatedPlayers.find(p => p.id === player?.id);
-        if (updated) {
-          setPlayer(updated);
-        }
-      });
-      
-    // Handle name error
-    socket.on("joinError", (msg) => {
-      alert(msg);
+      setPlayers(updatedPlayers);
+
+      // Update this player if needed
+      if (player) {
+        const updated = updatedPlayers.find(p => p.name === player.name);
+        if (updated) setPlayer(updated);
+      }
     });
 
     socket.on("transferMessage", (msg) => {
       setTransferMsg(msg);
     });
 
-    socket.on("transferMoney", ({ fromId, toId, amount }) => {
-      const recipient = players.find(p => p.id === toId);
-
-      // If fromId is "cashier", just add money to recipient
-      if (fromId === "cashier") {
-        if (!recipient || amount <= 0) return;
-        recipient.money += amount;
-        io.emit("players", players);
-        io.emit("transferMessage", {
-          from: "Cashier",
-          to: recipient.name,
-          amount
-        });
-        return;
-      }
-
-      // ...existing player-to-player transfer logic...
+    socket.on("joinError", (msg) => {
+      alert(msg);
     });
 
     return () => {
       socket.off("playerData");
       socket.off("players");
-      socket.off("joinError");
       socket.off("transferMessage");
+      socket.off("joinError");
     };
-  }, []);
-
-  useEffect(() => {
-    if (!player) return;
-    const updated = players.find(p => p.id === player.id);
-    if (updated && updated.money !== player.money) {
-      setPlayer(updated);
-    }
-  }, [players]);
+  }, [player]);
 
   const handleJoin = () => {
     if (nickname.trim()) {
@@ -89,22 +54,39 @@ const Player = () => {
 
   const handleTransfer = () => {
     if (!toId || !amount || Number(amount) <= 0) return;
+
     if (Number(amount) > player.money) {
       setErrorMsg("You don't have enough money to transfer that amount!");
       setTimeout(() => setErrorMsg(""), 3000);
       return;
     }
-    const recipient = players.find(p => p.id === toId);
+
     socket.emit("transferMoney", {
       fromId: player.id,
       toId,
       amount: Number(amount),
-      recipient: recipient.name,
-      sender: player.name,
-      message: `${player.name} transferred ₪${amount} to ${recipient.name}`,
     });
+
     setToId("");
     setAmount("");
+  };
+
+  const handlePayBank = () => {
+    if (!payBankAmount || Number(payBankAmount) <= 0) return;
+
+    if (Number(payBankAmount) > player.money) {
+      setErrorMsg("You don't have enough money to pay that amount!");
+      setTimeout(() => setErrorMsg(""), 3000);
+      return;
+    }
+
+    socket.emit("transferMoney", {
+      fromId: player.id,
+      toId: "bank",
+      amount: Number(payBankAmount),
+    });
+
+    setPayBankAmount("");
   };
 
   return (
@@ -141,6 +123,12 @@ const Player = () => {
               Your Balance: ₪{player.money}
             </p>
 
+            {transferMsg && (
+              <div className="mb-4 p-2 bg-green-100 text-green-800 rounded">
+                {transferMsg.from} paid ₪{transferMsg.amount} to {transferMsg.to}
+              </div>
+            )}
+
             <div className="p-4 bg-gray-100 rounded-lg mb-4">
               <h3 className="font-semibold mb-2">Transfer Money</h3>
               <select
@@ -167,10 +155,7 @@ const Player = () => {
               <button
                 onClick={handleTransfer}
                 disabled={
-                  !toId ||
-                  !amount ||
-                  Number(amount) <= 0 ||
-                  Number(amount) > (player?.money ?? 0)
+                  !toId || !amount || Number(amount) <= 0 || Number(amount) > player.money
                 }
                 className="w-full bg-blue-600 hover:bg-blue-700 text-black font-bold py-2 px-4 rounded disabled:opacity-50"
               >
@@ -190,24 +175,9 @@ const Player = () => {
                 className="w-full border rounded p-2 mb-2"
               />
               <button
-                onClick={() => {
-                  if (!payBankAmount || Number(payBankAmount) <= 0) return;
-                  if (Number(payBankAmount) > player.money) {
-                    setErrorMsg("You don't have enough money to pay that amount!");
-                    setTimeout(() => setErrorMsg(""), 3000);
-                    return;
-                  }
-                  socket.emit("transferMoney", {
-                    fromId: player.id,
-                    toId: "bank",
-                    amount: Number(payBankAmount)
-                  });
-                  setPayBankAmount("");
-                }}
+                onClick={handlePayBank}
                 disabled={
-                  !payBankAmount ||
-                  Number(payBankAmount) <= 0 ||
-                  Number(payBankAmount) > (player?.money ?? 0)
+                  !payBankAmount || Number(payBankAmount) <= 0 || Number(payBankAmount) > player.money
                 }
                 className="w-full bg-red-600 hover:bg-red-700 text-black font-bold py-2 px-4 rounded disabled:opacity-50"
               >
