@@ -8,14 +8,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production'
-      ? ['https://monopoly-bank-p2x6.onrender.com']
-      : ['http://localhost:5173', 'http://localhost:3000'],
+    origin: ['https://monopoly-bank-p2x6.onrender.com', 'http://localhost:5173', 'http://localhost:3000'],
     methods: ['GET', 'POST']
   }
 });
 
-// Use absolute path for saved data (safe for Render)
+// Use absolute path for saved data
 const DATA_FILE = path.resolve('savedData.json');
 
 // Load saved players
@@ -34,19 +32,18 @@ function savePlayers() {
   fs.writeFileSync(DATA_FILE, JSON.stringify(players, null, 2));
 }
 
-// Serve frontend if built (only in production)
-if (process.env.NODE_ENV === 'production') {
-  const clientPath = path.join(__dirname, 'client/dist');
-  if (fs.existsSync(clientPath)) {
-    app.use(express.static(clientPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(clientPath, 'index.html'));
-    });
-  } else {
-    console.warn("⚠️ client/dist not found. Did you run build?");
-  }
+// ✅ Serve frontend if built (regardless of NODE_ENV)
+const clientPath = path.join(__dirname, 'client', 'dist');
+if (fs.existsSync(clientPath)) {
+  app.use(express.static(clientPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientPath, 'index.html'));
+  });
+} else {
+  console.warn("⚠️ client/dist not found. Did you run build?");
 }
 
+// 🔌 Socket.IO logic
 io.on("connection", (socket) => {
   console.log(`🟢 ${socket.id} connected`);
 
@@ -54,7 +51,7 @@ io.on("connection", (socket) => {
     const existing = players.find(p => p.name === nickname);
 
     if (existing) {
-      existing.id = socket.id; // Reconnect with updated socket ID
+      existing.id = socket.id;
       socket.emit("playerData", existing);
     } else {
       const newPlayer = { id: socket.id, name: nickname, money: 1500 };
@@ -104,6 +101,7 @@ io.on("connection", (socket) => {
   });
 });
 
+// Start the server
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
