@@ -48,7 +48,7 @@ io.on("connection", (socket) => {
   console.log(`🟢 ${socket.id} connected`);
 
   socket.on("join", (nickname) => {
-    const existing = players.find(p => p.name === nickname);
+    let existing = players.find(p => p.name === nickname);
 
     if (existing) {
       existing.id = socket.id;
@@ -91,9 +91,9 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log(`🔴 ${socket.id} disconnected`);
-    const index = players.findIndex(p => p.id === socket.id);
-    if (index !== -1) {
-      players.splice(index, 1);
+    const disconnected = players.find(p => p.id === socket.id);
+    if (disconnected) {
+      disconnected.id = null; // ניתוק זמני – לא מוחקים מהמערך
     }
 
     io.emit("players", players);
