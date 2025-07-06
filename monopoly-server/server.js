@@ -91,9 +91,9 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log(`🔴 ${socket.id} disconnected`);
-    const disconnected = players.find(p => p.id === socket.id);
-    if (disconnected) {
-      disconnected.id = null;
+    const index = players.findIndex(p => p.id === socket.id);
+    if (index !== -1) {
+      players.splice(index, 1);
     }
 
     io.emit("players", players);
