@@ -6,16 +6,17 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { 
-  cors: { 
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://monopoly-bank-five.vercel.app', 'https://monopolybank-av36.onrender.com']
+const io = new Server(server, {
+  cors: {
+    origin: process.env.NODE_ENV === 'production'
+      ? ['https://monopoly-bank-p2x6.onrender.com']
       : ['http://localhost:5173', 'http://localhost:3000'],
     methods: ['GET', 'POST']
-  } 
+  }
 });
 
-const DATA_FILE = path.join(__dirname, 'savedData.json');
+// Use absolute path for saved data (safe for Render)
+const DATA_FILE = path.resolve('savedData.json');
 
 // Load saved players
 let players = [];
@@ -33,8 +34,18 @@ function savePlayers() {
   fs.writeFileSync(DATA_FILE, JSON.stringify(players, null, 2));
 }
 
-// Serve frontend if built
-app.use(express.static(path.join(__dirname, '../client/dist')));
+// Serve frontend if built (only in production)
+if (process.env.NODE_ENV === 'production') {
+  const clientPath = path.join(__dirname, 'client/dist');
+  if (fs.existsSync(clientPath)) {
+    app.use(express.static(clientPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(clientPath, 'index.html'));
+    });
+  } else {
+    console.warn("⚠️ client/dist not found. Did you run build?");
+  }
+}
 
 io.on("connection", (socket) => {
   console.log(`🟢 ${socket.id} connected`);
@@ -54,27 +65,18 @@ io.on("connection", (socket) => {
     io.emit("players", players);
     savePlayers();
   });
-  app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-  });
+
   socket.on("transferMoney", ({ fromId, toId, amount }) => {
     const sender = players.find(p => p.id === fromId);
     const recipient = players.find(p => p.id === toId);
 
-    // Pay to bank
     if (toId === "bank") {
       if (!sender || sender.money < amount || amount <= 0) return;
       sender.money -= amount;
-    }
-
-    // Receive from bank
-    else if (fromId === "bank") {
+    } else if (fromId === "bank") {
       if (!recipient || amount <= 0) return;
       recipient.money += amount;
-    }
-
-    // Player to player
-    else {
+    } else {
       if (!sender || !recipient || sender.money < amount || amount <= 0) return;
       sender.money -= amount;
       recipient.money += amount;
@@ -92,10 +94,9 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log(`🔴 ${socket.id} disconnected`);
-
     const disconnected = players.find(p => p.id === socket.id);
     if (disconnected) {
-      disconnected.id = null; // Keep in list but mark as offline
+      disconnected.id = null;
     }
 
     io.emit("players", players);
@@ -105,5 +106,5 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
