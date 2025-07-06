@@ -54,7 +54,7 @@ io.on("connection", (socket) => {
       existing.id = socket.id;
       socket.emit("playerData", existing);
     } else {
-      const newPlayer = { id: socket.id, name: nickname, money: 1500 };
+      const newPlayer = { id: socket.id, name: nickname, money: 500 };
       players.push(newPlayer);
       socket.emit("playerData", newPlayer);
     }
