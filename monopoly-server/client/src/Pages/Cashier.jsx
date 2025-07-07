@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
 import useSound from "use-sound";
 import CashSound from "../assets/sounds/cash.mp3";
-
-// Connect to the backend server
-const socket = io(import.meta.env.VITE_SOCKET_URL);
+import socket, { connectSocket } from "../socket";
 
 const Cashier = () => {
   const [players, setPlayers] = useState([]);
@@ -16,11 +13,13 @@ const Cashier = () => {
   const [playCashSound] = useSound(CashSound, { interrupt: true });
 
   useEffect(() => {
+    connectSocket();
+
     socket.on("players", setPlayers);
 
     socket.on("transferMessage", (msg) => {
       setTransferMsg(msg);
-      playCashSound(); // Play sound on every transfer
+      playCashSound();
     });
 
     return () => {
@@ -56,6 +55,7 @@ const Cashier = () => {
       <div className="w-full max-w-7xl mx-auto">
         <div className="bg-white/90 rounded-3xl shadow-2xl p-6 sm:p-10 md:p-14 border border-blue-100">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-blue-700 mb-8 text-center drop-shadow-lg tracking-tight">Cashier Panel</h1>
+
           <div className="mb-10 p-6 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-2xl shadow flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-6 border border-blue-100">
             <div className="flex-1 w-full">
               <label className="block text-lg font-semibold text-gray-700 mb-2" htmlFor="player-select">Select Player</label>
@@ -67,12 +67,11 @@ const Cashier = () => {
               >
                 <option value="">Select player</option>
                 {players.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
+                  <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
             </div>
+
             <div className="flex-1 w-full">
               <label className="block text-lg font-semibold text-gray-700 mb-2" htmlFor="amount-input">Amount</label>
               <input
@@ -85,6 +84,7 @@ const Cashier = () => {
                 onChange={e => setCashierAmount(e.target.value)}
               />
             </div>
+
             <button
               className="w-full sm:w-auto bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-black font-bold py-3 px-8 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-lg mt-4 sm:mt-0"
               disabled={!selectedPlayerId || !cashierAmount || Number(cashierAmount) <= 0}

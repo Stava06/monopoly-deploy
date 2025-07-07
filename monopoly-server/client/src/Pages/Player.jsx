@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
-
-const socket = io(import.meta.env.VITE_SOCKET_URL);
+import socket, { connectSocket } from "../socket";
 
 const Player = () => {
   const [nickname, setNickname] = useState("");
@@ -15,6 +13,8 @@ const Player = () => {
   const [payBankAmount, setPayBankAmount] = useState("");
 
   useEffect(() => {
+    connectSocket();
+
     socket.on("playerData", (data) => {
       setPlayer(data);
       setHasJoined(true);
@@ -22,8 +22,6 @@ const Player = () => {
 
     socket.on("players", (updatedPlayers) => {
       setPlayers(updatedPlayers);
-
-      // Update this player if needed
       if (player) {
         const updated = updatedPlayers.find(p => p.name === player.name);
         if (updated) setPlayer(updated);
@@ -54,38 +52,32 @@ const Player = () => {
 
   const handleTransfer = () => {
     if (!toId || !amount || Number(amount) <= 0) return;
-
     if (Number(amount) > player.money) {
       setErrorMsg("You don't have enough money to transfer that amount!");
       setTimeout(() => setErrorMsg(""), 3000);
       return;
     }
-
     socket.emit("transferMoney", {
       fromId: player.id,
       toId,
       amount: Number(amount),
     });
-
     setToId("");
     setAmount("");
   };
 
   const handlePayBank = () => {
     if (!payBankAmount || Number(payBankAmount) <= 0) return;
-
     if (Number(payBankAmount) > player.money) {
       setErrorMsg("You don't have enough money to pay that amount!");
       setTimeout(() => setErrorMsg(""), 3000);
       return;
     }
-
     socket.emit("transferMoney", {
       fromId: player.id,
       toId: "bank",
       amount: Number(payBankAmount),
     });
-
     setPayBankAmount("");
   };
 
