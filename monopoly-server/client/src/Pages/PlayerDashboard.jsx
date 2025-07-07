@@ -12,7 +12,8 @@ const PlayerDashboard = ({
   payBankAmount,
   setPayBankAmount,
   handlePayBank,
-  errorMsg
+  errorMsg,
+  handleDisconnect
 }) => {
   return (
     <>
@@ -94,7 +95,7 @@ const PlayerDashboard = ({
       </div>
 
       <button
-        onClick={() => window.location.reload()}
+        onClick={handleDisconnect}
         className="mt-2 w-full bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded transition-all"
       >
         Disconnect

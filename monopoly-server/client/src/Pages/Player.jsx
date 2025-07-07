@@ -81,6 +81,11 @@ const Player = () => {
     setPayBankAmount("");
   };
 
+  const handleDisconnect = () => {
+    socket.emit("manualDisconnect");
+    setTimeout(() => window.location.reload(), 300);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 lg:p-10 max-w-md w-full text-center">
